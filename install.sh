@@ -10,15 +10,13 @@
 #   bash install.sh --uninstall     # 卸载
 #   bash install.sh --list          # 列出支持的目标
 #
-# 说明：单文件 Skill。优先从本脚本同目录的 SKILL.md 安装（可离线）；
-#       同目录没有 SKILL.md 时，从 GitHub 下载。
+# 优先从同目录的 SKILL.md 安装（可离线）；同目录没有时才从 GitHub 下载。
 
 set -uo pipefail
 
 SKILL_NAME="true-question-alchemy"
 REPO_URL="https://github.com/JackieKK22/true-question-alchemy"
 
-# 目标目录 -> 路径
 targets() {
   case "$1" in
     workbuddy) echo "$HOME/.workbuddy/skills" ;;
@@ -45,8 +43,8 @@ usage() {
   codebuddy   \$HOME/.codebuddy/skills
   dsh         \$HOME/.dsh/skills
 
-其他 Agent（豆包 / Kimi / 元宝等）：没有固定技能目录，
-请在客户端「上传技能 / 自定义技能」处手动上传 SKILL.md。
+豆包 / Kimi / 元宝等没有固定目录的 Agent：把 SKILL.md 正文粘贴到
+「人设 / 系统提示词」里即可（见 README 方式二）。
 
 源码：$REPO_URL
 EOF
@@ -74,18 +72,14 @@ if [ "$ACTION" = "uninstall" ]; then
   echo "要卸载的目标："
   for t in $ALL_TARGETS; do
     d="$(targets "$t")/$SKILL_NAME"
-    if [ -d "$d" ]; then
-      echo "  - $t -> $d"
-    fi
+    [ -d "$d" ] && echo "  - $t -> $d"
   done
   echo
   read -r -p "确认卸载？输入 yes 继续：" ans
   if [ "$ans" = "yes" ]; then
     for t in $ALL_TARGETS; do
       d="$(targets "$t")/$SKILL_NAME"
-      if [ -d "$d" ]; then
-        rm -rf "$d" && echo "已卸载 $t"
-      fi
+      [ -d "$d" ] && rm -rf "$d" && echo "已卸载 $t"
     done
   else
     echo "已取消"
@@ -108,9 +102,7 @@ else
       TARGETS="$TARGETS $t"
     fi
   done
-  if [ -z "$(echo "$TARGETS" | tr -d ' ')" ]; then
-    TARGETS="workbuddy"
-  fi
+  [ -z "$(echo "$TARGETS" | tr -d ' ')" ] && TARGETS="workbuddy"
 fi
 
 # ---------- 准备 SKILL.md ----------
@@ -118,13 +110,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$SCRIPT_DIR/SKILL.md"
 
 if [ ! -f "$SRC" ]; then
-  echo "本地同目录没有 SKILL.md，尝试从 GitHub 下载..."
+  echo "本地没有 SKILL.md，尝试从 GitHub 下载..."
   TMP="$(mktemp -d)"
   trap 'rm -rf "$TMP"' EXIT
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$REPO_URL/raw/main/SKILL.md" -o "$TMP/SKILL.md" || { echo "下载失败，请检查网络或手动下载 SKILL.md"; exit 1; }
+    curl -fsSL "$REPO_URL/raw/main/SKILL.md" -o "$TMP/SKILL.md" || { echo "下载失败"; exit 1; }
   elif command -v wget >/dev/null 2>&1; then
-    wget -q "$REPO_URL/raw/main/SKILL.md" -O "$TMP/SKILL.md" || { echo "下载失败，请检查网络"; exit 1; }
+    wget -q "$REPO_URL/raw/main/SKILL.md" -O "$TMP/SKILL.md" || { echo "下载失败"; exit 1; }
   else
     echo "需要 curl 或 wget"; exit 1
   fi
@@ -142,7 +134,6 @@ done
 echo
 echo "完成。试试这样说："
 echo "  「我老是找不到要带的作业」"
-echo "  「我是不是不适合学英语？」"
+echo "  「这题怎么做？直接告诉我答案」（会讲思路，不代做）"
 echo
-echo "其他 Agent（豆包 / Kimi / 元宝等）请手动上传 SKILL.md。"
 echo "源码：$REPO_URL"
